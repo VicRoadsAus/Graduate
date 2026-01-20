@@ -1,0 +1,1336 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug the Road!</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&amp;family=Share+Tech+Mono&amp;display=swap" rel="stylesheet">
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    * {
+      font-family: 'Share Tech Mono', monospace;
+    }
+    
+    .title-font {
+      font-family: 'Orbitron', sans-serif;
+    }
+    
+    /* 16:9 aspect ratio container for desktop, full viewport for mobile */
+    @media (min-width: 768px) {
+      #app {
+        aspect-ratio: 16 / 9;
+        max-width: 100vw;
+        max-height: 100vh;
+        margin: 0 auto;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      
+      /* Calculate based on which dimension is limiting */
+      @supports (aspect-ratio: 16 / 9) {
+        #app {
+          width: min(100vw, calc(100vh * 16 / 9));
+          height: min(100vh, calc(100vw * 9 / 16));
+        }
+      }
+    }
+    
+    @media (max-width: 767px) {
+      #app {
+        width: 100vw;
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+      }
+    }
+    
+    @keyframes flicker {
+      0%, 100% { opacity: 0.9; }
+      50% { opacity: 0.7; }
+    }
+    
+    @keyframes glitch {
+      0%, 100% { opacity: 1; transform: translate(0); }
+      50% { opacity: 0.85; transform: translate(-1px, 1px); }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 5px currentColor; }
+      50% { box-shadow: 0 0 12px currentColor; }
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(-2px); }
+    }
+    
+    @keyframes driveDown {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(calc(100% + 100px)); }
+    }
+    
+    @keyframes driveUp {
+      0% { transform: translateY(calc(100% + 100px)); }
+      100% { transform: translateY(-100%); }
+    }
+    
+    @keyframes fixedPop {
+      0% { transform: scale(0) rotate(-10deg); opacity: 1; }
+      50% { transform: scale(1.3) rotate(5deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 0; }
+    }
+    
+    @keyframes sparkBurst {
+      0% { transform: scale(0); opacity: 1; }
+      100% { transform: scale(2); opacity: 0; }
+    }
+    
+    @keyframes countPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    
+    @keyframes penaltyFlash {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .game-bg {
+      background: linear-gradient(135deg, #022818 0%, #046A38 100%);
+    }
+    
+    .bug {
+      cursor: pointer;
+      transition: transform 0.1s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      pointer-events: all;
+    }
+    
+    .bug:active {
+      transform: scale(0.95);
+    }
+    
+    .vehicle {
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      pointer-events: all;
+    }
+    
+    .bug-flicker {
+      animation: flicker 1s ease-in-out infinite;
+    }
+    
+    .bug-glitch {
+      animation: glitch 1.5s ease-in-out infinite;
+    }
+    
+    .bug-shake {
+      animation: shake 0.8s ease-in-out infinite;
+    }
+    
+    .bug-pulse {
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    
+    .fixed-text {
+      animation: fixedPop 0.5s ease-out forwards;
+    }
+    
+    .penalty-text {
+      animation: fixedPop 0.5s ease-out forwards;
+    }
+    
+    .spark {
+      animation: sparkBurst 0.4s ease-out forwards;
+    }
+    
+    .score-bump {
+      animation: countPulse 0.2s ease-out;
+    }
+    
+    .penalty-flash {
+      animation: penaltyFlash 0.3s ease-out;
+    }
+    
+    .neon-text {
+      text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+    }
+    
+    .road-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full m-0 p-0 overflow-hidden bg-gray-900">
+  <div id="app" class="h-full w-full relative"><!-- Start/Instructions Screen -->
+   <div id="start-screen" class="h-full w-full flex flex-col items-center justify-center game-bg relative overflow-hidden">
+    <div class="absolute inset-0 opacity-15">
+     <svg class="w-full h-full" viewbox="0 0 100 100" preserveaspectratio="xMidYMid slice"><!-- Space Invaders Grid --> <g fill="#3EA527"><!-- Row 1 -->
+       <rect x="10" y="5" width="3" height="3" />
+       <rect x="13" y="5" width="3" height="3" />
+       <rect x="16" y="5" width="3" height="3" />
+       <rect x="10" y="8" width="3" height="3" />
+       <rect x="16" y="8" width="3" height="3" />
+       <rect x="7" y="11" width="3" height="3" />
+       <rect x="10" y="11" width="9" height="3" />
+       <rect x="19" y="11" width="3" height="3" />
+       <rect x="7" y="14" width="3" height="3" />
+       <rect x="13" y="14" width="3" height="3" />
+       <rect x="19" y="14" width="3" height="3" />
+       <rect x="10" y="17" width="3" height="3" />
+       <rect x="16" y="17" width="3" height="3" /> <!-- Row 2 -->
+       <rect x="30" y="5" width="3" height="3" />
+       <rect x="36" y="5" width="3" height="3" />
+       <rect x="30" y="8" width="3" height="3" />
+       <rect x="36" y="8" width="3" height="3" />
+       <rect x="27" y="11" width="3" height="3" />
+       <rect x="30" y="11" width="9" height="3" />
+       <rect x="39" y="11" width="3" height="3" />
+       <rect x="27" y="14" width="12" height="3" />
+       <rect x="39" y="14" width="3" height="3" />
+       <rect x="30" y="17" width="3" height="3" />
+       <rect x="33" y="17" width="3" height="3" />
+       <rect x="36" y="17" width="3" height="3" /> <!-- Row 3 -->
+       <rect x="50" y="5" width="3" height="3" />
+       <rect x="53" y="5" width="3" height="3" />
+       <rect x="56" y="5" width="3" height="3" />
+       <rect x="50" y="8" width="3" height="3" />
+       <rect x="56" y="8" width="3" height="3" />
+       <rect x="47" y="11" width="3" height="3" />
+       <rect x="50" y="11" width="9" height="3" />
+       <rect x="59" y="11" width="3" height="3" />
+       <rect x="47" y="14" width="3" height="3" />
+       <rect x="53" y="14" width="3" height="3" />
+       <rect x="59" y="14" width="3" height="3" />
+       <rect x="50" y="17" width="3" height="3" />
+       <rect x="56" y="17" width="3" height="3" /> <!-- Row 4 -->
+       <rect x="70" y="5" width="3" height="3" />
+       <rect x="76" y="5" width="3" height="3" />
+       <rect x="70" y="8" width="3" height="3" />
+       <rect x="76" y="8" width="3" height="3" />
+       <rect x="67" y="11" width="3" height="3" />
+       <rect x="70" y="11" width="9" height="3" />
+       <rect x="79" y="11" width="3" height="3" />
+       <rect x="67" y="14" width="12" height="3" />
+       <rect x="79" y="14" width="3" height="3" />
+       <rect x="70" y="17" width="3" height="3" />
+       <rect x="73" y="17" width="3" height="3" />
+       <rect x="76" y="17" width="3" height="3" /> <!-- Row 5 -->
+       <rect x="10" y="30" width="3" height="3" />
+       <rect x="13" y="30" width="3" height="3" />
+       <rect x="16" y="30" width="3" height="3" />
+       <rect x="10" y="33" width="3" height="3" />
+       <rect x="16" y="33" width="3" height="3" />
+       <rect x="7" y="36" width="3" height="3" />
+       <rect x="10" y="36" width="9" height="3" />
+       <rect x="19" y="36" width="3" height="3" />
+       <rect x="7" y="39" width="3" height="3" />
+       <rect x="13" y="39" width="3" height="3" />
+       <rect x="19" y="39" width="3" height="3" />
+       <rect x="10" y="42" width="3" height="3" />
+       <rect x="16" y="42" width="3" height="3" /> <!-- Row 6 -->
+       <rect x="50" y="30" width="3" height="3" />
+       <rect x="56" y="30" width="3" height="3" />
+       <rect x="50" y="33" width="3" height="3" />
+       <rect x="56" y="33" width="3" height="3" />
+       <rect x="47" y="36" width="3" height="3" />
+       <rect x="50" y="36" width="9" height="3" />
+       <rect x="59" y="36" width="3" height="3" />
+       <rect x="47" y="39" width="12" height="3" />
+       <rect x="59" y="39" width="3" height="3" />
+       <rect x="50" y="42" width="3" height="3" />
+       <rect x="53" y="42" width="3" height="3" />
+       <rect x="56" y="42" width="3" height="3" /> <!-- Row 7 -->
+       <rect x="30" y="55" width="3" height="3" />
+       <rect x="33" y="55" width="3" height="3" />
+       <rect x="36" y="55" width="3" height="3" />
+       <rect x="30" y="58" width="3" height="3" />
+       <rect x="36" y="58" width="3" height="3" />
+       <rect x="27" y="61" width="3" height="3" />
+       <rect x="30" y="61" width="9" height="3" />
+       <rect x="39" y="61" width="3" height="3" />
+       <rect x="27" y="64" width="3" height="3" />
+       <rect x="33" y="64" width="3" height="3" />
+       <rect x="39" y="64" width="3" height="3" />
+       <rect x="30" y="67" width="3" height="3" />
+       <rect x="36" y="67" width="3" height="3" /> <!-- Row 8 -->
+       <rect x="70" y="55" width="3" height="3" />
+       <rect x="76" y="55" width="3" height="3" />
+       <rect x="70" y="58" width="3" height="3" />
+       <rect x="76" y="58" width="3" height="3" />
+       <rect x="67" y="61" width="3" height="3" />
+       <rect x="70" y="61" width="9" height="3" />
+       <rect x="79" y="61" width="3" height="3" />
+       <rect x="67" y="64" width="12" height="3" />
+       <rect x="79" y="64" width="3" height="3" />
+       <rect x="70" y="67" width="3" height="3" />
+       <rect x="73" y="67" width="3" height="3" />
+       <rect x="76" y="67" width="3" height="3" /> <!-- Row 9 -->
+       <rect x="10" y="80" width="3" height="3" />
+       <rect x="13" y="80" width="3" height="3" />
+       <rect x="16" y="80" width="3" height="3" />
+       <rect x="10" y="83" width="3" height="3" />
+       <rect x="16" y="83" width="3" height="3" />
+       <rect x="7" y="86" width="3" height="3" />
+       <rect x="10" y="86" width="9" height="3" />
+       <rect x="19" y="86" width="3" height="3" />
+       <rect x="7" y="89" width="3" height="3" />
+       <rect x="13" y="89" width="3" height="3" />
+       <rect x="19" y="89" width="3" height="3" />
+       <rect x="50" y="80" width="3" height="3" />
+       <rect x="56" y="80" width="3" height="3" />
+       <rect x="50" y="83" width="3" height="3" />
+       <rect x="56" y="83" width="3" height="3" />
+       <rect x="47" y="86" width="3" height="3" />
+       <rect x="50" y="86" width="9" height="3" />
+       <rect x="59" y="86" width="3" height="3" />
+       <rect x="47" y="89" width="12" height="3" />
+       <rect x="59" y="89" width="3" height="3" />
+      </g>
+     </svg>
+    </div>
+    <div class="relative z-10 text-center px-6 max-w-2xl">
+     <div class="text-5xl md:text-6xl mb-3">
+      🐛🚗
+     </div>
+     <h1 id="title-display" class="title-font text-3xl md:text-5xl font-black text-[#3EA527] neon-text mb-4 md:mb-6">DEBUG THE ROAD!</h1><!-- Instructions -->
+     <div class="bg-gray-800/80 border-2 border-[#3EA527] rounded-xl p-4 md:p-6 mb-6 text-left">
+      <h2 class="title-font text-lg md:text-xl text-[#3EA527] mb-3 flex items-center gap-2"><strong>HOW TO PLAY</strong></h2>
+      <div class="space-y-3 text-gray-200 text-xs md:text-sm">
+       <div>
+        <p class="font-bold text-[#3EA527] mb-1">🐞 Debug the Bugs!</p>
+        <p class="leading-relaxed">Bugs have invaded the digital road network! Tap every glitch you see. Some bugs need multiple taps to fully disappear. <strong class="text-[#3EA527]">Keep tapping until gone!</strong></p>
+       </div>
+       <div>
+        <p class="font-bold text-[#3EA527] mb-1">🚗 Avoid the Vehicles</p>
+        <p class="leading-relaxed">Don't tap vehicles — each hit costs you <strong class="text-red-400">–1 point</strong>.</p>
+       </div>
+       <div>
+        <p class="font-bold text-[#3EA527] mb-1">⏱️ 45 Seconds on the Clock</p>
+        <p class="leading-relaxed">Clear as many bugs as possible before time runs out.</p>
+       </div>
+       <div>
+        <p class="font-bold text-[#3EA527] mb-1">🏆 Reach 40 Points to Win!</p>
+        <p class="leading-relaxed">Hit 40 points to unlock a prize code for the VicRoads booth!</p>
+       </div>
+      </div>
+     </div><button id="start-btn" class="title-font bg-[#3EA527] hover:bg-[#4bb82f] text-white font-bold py-3 md:py-4 px-8 md:px-12 text-lg md:text-xl rounded-lg transform hover:scale-105 transition-all duration-200 shadow-lg shadow-[#3EA527]/50"> START DEBUGGING </button>
+     <p class="text-[#3EA527] text-xs mt-3 md:mt-4 opacity-80">Tap carefully — vehicles move fast!</p>
+    </div>
+   </div><!-- Game Screen -->
+   <div id="game-screen" class="h-full w-full hidden game-bg relative overflow-hidden"><!-- HUD -->
+    <div class="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-30 bg-gradient-to-b from-gray-900/90 to-transparent">
+     <div class="flex items-center gap-2"><span class="text-[#3EA527] text-sm title-font">SCORE:</span> <span id="score" class="text-3xl font-bold text-[#3EA527] neon-text title-font">0</span> <span class="text-[#046A38] text-xl title-font">/40</span>
+     </div>
+     <div class="flex items-center gap-2"><span class="text-2xl">⏱️</span> <span id="timer" class="text-3xl font-bold text-[#3EA527] neon-text title-font">45</span>
+     </div>
+    </div><!-- Highway System Container -->
+    <div class="road-container"><!-- Multiple Highway Roads -->
+     <svg class="absolute inset-0 w-full h-full" viewbox="0 0 100 100" preserveaspectratio="none" style="z-index: 5;"><defs>
+       <lineargradient id="roadGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#1a2f3f;stop-opacity:1" />
+        <stop offset="50%" style="stop-color:#374151;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#1a2f3f;stop-opacity:1" />
+       </lineargradient>
+       <lineargradient id="roadGradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#1f2937;stop-opacity:1" />
+        <stop offset="50%" style="stop-color:#3b4a5e;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#1f2937;stop-opacity:1" />
+       </lineargradient>
+      </defs> <!-- Left Vertical Highway --> <path d="M 15 -5 L 18 105" stroke="url(#roadGradient1)" stroke-width="12" fill="none" /> <path d="M 15 -5 L 12 30 L 15 50 L 18 75 L 15 105" stroke="#fbbf24" stroke-width="0.3" fill="none" stroke-dasharray="3,3" opacity="0.7" /> <!-- Center Curved Highway --> <path d="M 45 -5 Q 48 25, 50 50 T 55 105" stroke="url(#roadGradient1)" stroke-width="14" fill="none" /> <path d="M 45 -5 Q 48 25, 50 50 T 55 105" stroke="#fbbf24" stroke-width="0.3" fill="none" stroke-dasharray="3,3" opacity="0.7" /> <!-- Right Vertical Highway --> <path d="M 80 -5 Q 78 30, 82 50 T 80 105" stroke="url(#roadGradient2)" stroke-width="13" fill="none" /> <path d="M 80 -5 Q 78 30, 82 50 T 80 105" stroke="#fbbf24" stroke-width="0.3" fill="none" stroke-dasharray="3,3" opacity="0.7" /> <!-- Diagonal Cross Highway --> <path d="M -5 20 Q 30 35, 50 45 T 105 65" stroke="url(#roadGradient2)" stroke-width="11" fill="none" opacity="0.9" /> <path d="M -5 20 Q 30 35, 50 45 T 105 65" stroke="#fbbf24" stroke-width="0.3" fill="none" stroke-dasharray="2,2" opacity="0.6" /> <!-- Bottom Diagonal Highway --> <path d="M -5 70 Q 25 75, 50 78 T 105 85" stroke="url(#roadGradient1)" stroke-width="10" fill="none" opacity="0.85" /> <path d="M -5 70 Q 25 75, 50 78 T 105 85" stroke="#fbbf24" stroke-width="0.3" fill="none" stroke-dasharray="2,2" opacity="0.6" />
+     </svg><!-- Vehicles Container (on roads) -->
+     <div id="vehicles-container" class="absolute inset-0 pointer-events-none" style="z-index: 15;"><!-- Vehicles spawn here -->
+     </div><!-- Bug Container (on roads) -->
+     <div id="bug-container" class="absolute inset-0 pt-20 pb-4 px-4 pointer-events-none" style="z-index: 20;"><!-- Bugs spawn here -->
+     </div>
+    </div><!-- Fixed Effects Container -->
+    <div id="effects-container" class="absolute inset-0 pointer-events-none z-40"><!-- Fixed! popups appear here -->
+    </div>
+   </div><!-- Win Screen -->
+   <div id="win-screen" class="h-full w-full hidden flex flex-col items-center justify-center game-bg relative overflow-hidden">
+    <div class="absolute inset-0 opacity-15">
+     <svg class="w-full h-full" viewbox="0 0 100 100" preserveaspectratio="xMidYMid slice"><!-- Space Invaders Grid --> <g fill="#3EA527"><!-- Row 1 -->
+       <rect x="10" y="5" width="3" height="3" />
+       <rect x="13" y="5" width="3" height="3" />
+       <rect x="16" y="5" width="3" height="3" />
+       <rect x="10" y="8" width="3" height="3" />
+       <rect x="16" y="8" width="3" height="3" />
+       <rect x="7" y="11" width="3" height="3" />
+       <rect x="10" y="11" width="9" height="3" />
+       <rect x="19" y="11" width="3" height="3" />
+       <rect x="7" y="14" width="3" height="3" />
+       <rect x="13" y="14" width="3" height="3" />
+       <rect x="19" y="14" width="3" height="3" />
+       <rect x="10" y="17" width="3" height="3" />
+       <rect x="16" y="17" width="3" height="3" /> <!-- Row 2 -->
+       <rect x="30" y="5" width="3" height="3" />
+       <rect x="36" y="5" width="3" height="3" />
+       <rect x="30" y="8" width="3" height="3" />
+       <rect x="36" y="8" width="3" height="3" />
+       <rect x="27" y="11" width="3" height="3" />
+       <rect x="30" y="11" width="9" height="3" />
+       <rect x="39" y="11" width="3" height="3" />
+       <rect x="27" y="14" width="12" height="3" />
+       <rect x="39" y="14" width="3" height="3" />
+       <rect x="30" y="17" width="3" height="3" />
+       <rect x="33" y="17" width="3" height="3" />
+       <rect x="36" y="17" width="3" height="3" /> <!-- Row 3 -->
+       <rect x="50" y="5" width="3" height="3" />
+       <rect x="53" y="5" width="3" height="3" />
+       <rect x="56" y="5" width="3" height="3" />
+       <rect x="50" y="8" width="3" height="3" />
+       <rect x="56" y="8" width="3" height="3" />
+       <rect x="47" y="11" width="3" height="3" />
+       <rect x="50" y="11" width="9" height="3" />
+       <rect x="59" y="11" width="3" height="3" />
+       <rect x="47" y="14" width="3" height="3" />
+       <rect x="53" y="14" width="3" height="3" />
+       <rect x="59" y="14" width="3" height="3" />
+       <rect x="50" y="17" width="3" height="3" />
+       <rect x="56" y="17" width="3" height="3" /> <!-- Row 4 -->
+       <rect x="70" y="5" width="3" height="3" />
+       <rect x="76" y="5" width="3" height="3" />
+       <rect x="70" y="8" width="3" height="3" />
+       <rect x="76" y="8" width="3" height="3" />
+       <rect x="67" y="11" width="3" height="3" />
+       <rect x="70" y="11" width="9" height="3" />
+       <rect x="79" y="11" width="3" height="3" />
+       <rect x="67" y="14" width="12" height="3" />
+       <rect x="79" y="14" width="3" height="3" />
+       <rect x="70" y="17" width="3" height="3" />
+       <rect x="73" y="17" width="3" height="3" />
+       <rect x="76" y="17" width="3" height="3" /> <!-- Row 5 -->
+       <rect x="10" y="30" width="3" height="3" />
+       <rect x="13" y="30" width="3" height="3" />
+       <rect x="16" y="30" width="3" height="3" />
+       <rect x="10" y="33" width="3" height="3" />
+       <rect x="16" y="33" width="3" height="3" />
+       <rect x="7" y="36" width="3" height="3" />
+       <rect x="10" y="36" width="9" height="3" />
+       <rect x="19" y="36" width="3" height="3" />
+       <rect x="7" y="39" width="3" height="3" />
+       <rect x="13" y="39" width="3" height="3" />
+       <rect x="19" y="39" width="3" height="3" />
+       <rect x="10" y="42" width="3" height="3" />
+       <rect x="16" y="42" width="3" height="3" /> <!-- Row 6 -->
+       <rect x="50" y="30" width="3" height="3" />
+       <rect x="56" y="30" width="3" height="3" />
+       <rect x="50" y="33" width="3" height="3" />
+       <rect x="56" y="33" width="3" height="3" />
+       <rect x="47" y="36" width="3" height="3" />
+       <rect x="50" y="36" width="9" height="3" />
+       <rect x="59" y="36" width="3" height="3" />
+       <rect x="47" y="39" width="12" height="3" />
+       <rect x="59" y="39" width="3" height="3" />
+       <rect x="50" y="42" width="3" height="3" />
+       <rect x="53" y="42" width="3" height="3" />
+       <rect x="56" y="42" width="3" height="3" /> <!-- Row 7 -->
+       <rect x="30" y="55" width="3" height="3" />
+       <rect x="33" y="55" width="3" height="3" />
+       <rect x="36" y="55" width="3" height="3" />
+       <rect x="30" y="58" width="3" height="3" />
+       <rect x="36" y="58" width="3" height="3" />
+       <rect x="27" y="61" width="3" height="3" />
+       <rect x="30" y="61" width="9" height="3" />
+       <rect x="39" y="61" width="3" height="3" />
+       <rect x="27" y="64" width="3" height="3" />
+       <rect x="33" y="64" width="3" height="3" />
+       <rect x="39" y="64" width="3" height="3" />
+       <rect x="30" y="67" width="3" height="3" />
+       <rect x="36" y="67" width="3" height="3" /> <!-- Row 8 -->
+       <rect x="70" y="55" width="3" height="3" />
+       <rect x="76" y="55" width="3" height="3" />
+       <rect x="70" y="58" width="3" height="3" />
+       <rect x="76" y="58" width="3" height="3" />
+       <rect x="67" y="61" width="3" height="3" />
+       <rect x="70" y="61" width="9" height="3" />
+       <rect x="79" y="61" width="3" height="3" />
+       <rect x="67" y="64" width="12" height="3" />
+       <rect x="79" y="64" width="3" height="3" />
+       <rect x="70" y="67" width="3" height="3" />
+       <rect x="73" y="67" width="3" height="3" />
+       <rect x="76" y="67" width="3" height="3" /> <!-- Row 9 -->
+       <rect x="10" y="80" width="3" height="3" />
+       <rect x="13" y="80" width="3" height="3" />
+       <rect x="16" y="80" width="3" height="3" />
+       <rect x="10" y="83" width="3" height="3" />
+       <rect x="16" y="83" width="3" height="3" />
+       <rect x="7" y="86" width="3" height="3" />
+       <rect x="10" y="86" width="9" height="3" />
+       <rect x="19" y="86" width="3" height="3" />
+       <rect x="7" y="89" width="3" height="3" />
+       <rect x="13" y="89" width="3" height="3" />
+       <rect x="19" y="89" width="3" height="3" />
+       <rect x="50" y="80" width="3" height="3" />
+       <rect x="56" y="80" width="3" height="3" />
+       <rect x="50" y="83" width="3" height="3" />
+       <rect x="56" y="83" width="3" height="3" />
+       <rect x="47" y="86" width="3" height="3" />
+       <rect x="50" y="86" width="9" height="3" />
+       <rect x="59" y="86" width="3" height="3" />
+       <rect x="47" y="89" width="12" height="3" />
+       <rect x="59" y="89" width="3" height="3" />
+      </g>
+     </svg>
+    </div>
+    <div class="relative z-10 text-center px-6">
+     <div class="text-8xl mb-4">
+      🏆
+     </div>
+     <h2 id="win-message-display" class="title-font text-4xl md:text-5xl font-black text-white mb-4" style="text-shadow: 0 0 20px #22c55e, 0 0 40px #22c55e, 0 0 60px #22c55e;">SYSTEM RESTORED!</h2>
+     <p class="text-gray-200 text-xl mb-2">All bugs cleared successfully!</p>
+     <p class="text-gray-300 text-lg mb-8">Final Score: <span id="final-score" class="font-bold text-2xl text-[#3EA527]">0</span></p>
+     <div class="bg-gray-800/80 border-2 border-[#3EA527] rounded-xl p-6 mb-8 max-w-sm mx-auto">
+      <p class="text-[#3EA527] text-sm mb-2 title-font">🎁 YOUR PRIZE CODE</p>
+      <p id="prize-code-display" class="title-font text-2xl md:text-3xl font-bold text-[#3EA527] neon-text tracking-wider">DEBUG-VR1</p>
+      <p class="text-gray-300 text-xs mt-3 opacity-70">Show this screen at the VicRoads booth!</p>
+     </div><button id="play-again-win" class="title-font bg-[#3EA527] hover:bg-[#4bb82f] text-white font-bold py-3 px-8 text-lg rounded-lg transform hover:scale-105 transition-all duration-200"> PLAY AGAIN </button>
+    </div>
+   </div><!-- Lose Screen -->
+   <div id="lose-screen" class="h-full w-full hidden flex flex-col items-center justify-center game-bg relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-red-900/20 to-gray-900/50"></div>
+    <div class="relative z-10 text-center px-6">
+     <div class="text-8xl mb-4">
+      💥
+     </div>
+     <h2 class="title-font text-4xl md:text-5xl font-black text-red-400 neon-text mb-4">SYSTEM CRASH!</h2>
+     <p class="text-gray-200 text-xl mb-2">Too many bugs remain...</p>
+     <p class="text-gray-300 text-lg mb-8">You fixed: <span id="lose-score" class="font-bold text-2xl text-yellow-400">0</span> / 40 bugs</p><button id="play-again-lose" class="title-font bg-[#3EA527] hover:bg-[#4bb82f] text-white font-bold py-4 px-12 text-xl rounded-lg transform hover:scale-105 transition-all duration-200 shadow-lg shadow-[#3EA527]/50"> TRY AGAIN </button>
+     <p class="text-[#3EA527] text-sm mt-6 opacity-70">Tip: Some bugs need multiple taps to clear!</p>
+    </div>
+   </div>
+  </div>
+  <script>
+    // Default configuration
+    const defaultConfig = {
+      game_title: 'DEBUG THE ROAD!',
+      instructions_text: 'Tap bugs to fix them — avoid hitting vehicles!',
+      win_message: 'SYSTEM RESTORED!',
+      prize_code: 'VICROADS-DEBUG-2024',
+      background_color: '#022818',
+      road_color: '#2a4858',
+      primary_color: '#3EA527',
+      text_color: '#d1d5db',
+      accent_color: '#046A38',
+      font_family: 'Orbitron',
+      font_size: 16
+    };
+    
+    // Game State
+    let gameState = {
+      score: 0,
+      timeLeft: 45,
+      isPlaying: false,
+      bugs: [],
+      vehicles: [],
+      spawnInterval: null,
+      vehicleInterval: null,
+      timerInterval: null,
+      roadCurveInterval: null,
+      bugIdCounter: 0,
+      vehicleIdCounter: 0,
+      winThreshold: 40,
+      hasReached30: false,
+      prizeCode: ''
+    };
+    
+    // Bug Types with multi-tap system
+    const bugTypes = [
+      {
+        name: 'pothole',
+        minTaps: 1,
+        maxTaps: 3,
+        render: (tapsLeft) => `
+          <div class="bug-shake flex flex-col items-center">
+            <svg width="48" height="48" viewBox="0 0 48 48" class="drop-shadow-lg">
+              <circle cx="24" cy="24" r="22" fill="#1f2937" stroke="#ef4444" stroke-width="2"/>
+              <path d="M 15 20 L 18 28 L 22 25 L 26 30 L 30 26 L 33 28 L 30 20 Z" fill="#374151" opacity="0.8"/>
+              <text x="24" y="32" text-anchor="middle" fill="#ef4444" font-size="14" font-weight="bold">!</text>
+            </svg>
+            <span class="text-xs text-red-400 mt-1 font-bold">POTHOLE</span>
+          </div>
+        `
+      },
+      {
+        name: 'traffic-light-error',
+        minTaps: 2,
+        maxTaps: 4,
+        render: (tapsLeft) => `
+          <div class="bug-glitch flex flex-col items-center">
+            <svg width="44" height="64" viewBox="0 0 44 64" class="drop-shadow-lg">
+              <rect x="8" y="2" width="28" height="60" rx="4" fill="#1f2937" stroke="#06b6d4" stroke-width="2"/>
+              <circle cx="22" cy="14" r="6" fill="#ef4444" class="bug-flicker" opacity="0.9"/>
+              <circle cx="22" cy="32" r="6" fill="#eab308" class="bug-flicker" opacity="0.9" style="animation-delay: 0.2s"/>
+              <circle cx="22" cy="50" r="6" fill="#22c55e" class="bug-flicker" opacity="0.9" style="animation-delay: 0.4s"/>
+              <text x="22" y="36" text-anchor="middle" fill="#fbbf24" font-size="20" font-weight="bold">✕</text>
+            </svg>
+            <span class="text-xs text-yellow-400 mt-1 font-bold">ERROR</span>
+          </div>
+        `
+      },
+      {
+        name: 'glitch-sign',
+        minTaps: 1,
+        maxTaps: 2,
+        render: (tapsLeft) => {
+          const signs = ['STOP', 'YIELD', '50', 'EXIT'];
+          const sign = signs[Math.floor(Math.random() * signs.length)];
+          return `
+            <div class="bug-glitch flex flex-col items-center">
+              <svg width="52" height="52" viewBox="0 0 52 52" class="drop-shadow-lg">
+                <rect x="2" y="2" width="48" height="48" rx="4" fill="#1f2937" stroke="#a855f7" stroke-width="2"/>
+                <rect x="6" y="6" width="40" height="40" rx="2" fill="#6b21a8" opacity="0.3"/>
+                <text x="26" y="32" text-anchor="middle" fill="#c084fc" font-size="14" font-weight="bold" class="bug-shake">${sign}</text>
+                <line x1="10" y1="10" x2="42" y2="42" stroke="#a855f7" stroke-width="2" opacity="0.6"/>
+              </svg>
+              <span class="text-xs text-purple-400 mt-1 font-bold">CORRUPT</span>
+            </div>
+          `;
+        }
+      },
+      {
+        name: 'road-crack',
+        minTaps: 2,
+        maxTaps: 3,
+        render: (tapsLeft) => `
+          <div class="bug-pulse flex flex-col items-center">
+            <svg width="60" height="40" viewBox="0 0 60 40" class="drop-shadow-lg">
+              <rect x="2" y="2" width="56" height="36" rx="3" fill="#2d4a5e" stroke="#06b6d4" stroke-width="2" opacity="0.9"/>
+              <path d="M 10 20 L 15 15 L 20 25 L 25 18 L 30 22 L 35 15 L 40 20 L 45 25 L 50 20" 
+                    stroke="#ef4444" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <circle cx="20" cy="25" r="3" fill="#fbbf24"/>
+              <circle cx="35" cy="15" r="3" fill="#fbbf24"/>
+            </svg>
+            <span class="text-xs text-cyan-400 mt-1 font-bold">DAMAGE</span>
+          </div>
+        `
+      },
+      {
+        name: 'cone-cluster',
+        minTaps: 1,
+        maxTaps: 2,
+        render: (tapsLeft) => `
+          <div class="bug-shake flex flex-col items-center">
+            <svg width="56" height="48" viewBox="0 0 56 48" class="drop-shadow-lg">
+              <g>
+                <polygon points="12,40 16,20 20,40" fill="#f97316" stroke="#ea580c" stroke-width="1.5"/>
+                <rect x="14" y="40" width="4" height="4" fill="#1f2937"/>
+              </g>
+              <g>
+                <polygon points="24,42 28,18 32,42" fill="#f97316" stroke="#ea580c" stroke-width="1.5"/>
+                <rect x="26" y="42" width="4" height="4" fill="#1f2937"/>
+              </g>
+              <g>
+                <polygon points="36,40 40,22 44,40" fill="#f97316" stroke="#ea580c" stroke-width="1.5"/>
+                <rect x="38" y="40" width="4" height="4" fill="#1f2937"/>
+              </g>
+              <text x="28" y="14" text-anchor="middle" fill="#fbbf24" font-size="18" font-weight="bold">⚠</text>
+            </svg>
+            <span class="text-xs text-orange-400 mt-1 font-bold">HAZARD</span>
+          </div>
+        `
+      },
+      {
+        name: 'system-error',
+        minTaps: 3,
+        maxTaps: 5,
+        render: (tapsLeft) => {
+          const errors = ['ERR 404', 'ERR 500', 'NULL', 'TIMEOUT'];
+          const err = errors[Math.floor(Math.random() * errors.length)];
+          return `
+            <div class="bug-glitch bg-gradient-to-br from-gray-900 to-gray-800 border-2 border-red-500 rounded-lg p-3 shadow-xl" style="box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);">
+              <div class="flex items-center gap-2 mb-2">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                  <circle cx="10" cy="10" r="9" fill="#ef4444"/>
+                  <text x="10" y="15" text-anchor="middle" fill="white" font-size="14" font-weight="bold">!</text>
+                </svg>
+                <span class="text-red-400 text-xs title-font font-bold">SYSTEM</span>
+              </div>
+              <div class="text-red-300 text-sm font-bold title-font">${err}</div>
+            </div>
+          `;
+        }
+      },
+      {
+        name: 'critical-error',
+        minTaps: 4,
+        maxTaps: 5,
+        render: (tapsLeft) => {
+          return `
+            <div class="bug-glitch bg-gradient-to-br from-red-900 to-gray-900 border-2 border-red-600 rounded-lg p-3 shadow-xl" style="box-shadow: 0 0 25px rgba(220, 38, 38, 0.5);">
+              <div class="flex items-center gap-2 mb-2">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                  <polygon points="10,2 18,18 2,18" fill="#dc2626"/>
+                  <text x="10" y="16" text-anchor="middle" fill="white" font-size="12" font-weight="bold">!</text>
+                </svg>
+                <span class="text-red-500 text-xs title-font font-bold">CRITICAL</span>
+              </div>
+              <div class="text-red-400 text-sm font-bold title-font">FATAL</div>
+            </div>
+          `;
+        }
+      },
+      {
+        name: 'network-failure',
+        minTaps: 4,
+        maxTaps: 5,
+        render: (tapsLeft) => {
+          return `
+            <div class="bug-pulse bg-gradient-to-br from-purple-900 to-gray-900 border-2 border-purple-500 rounded-lg p-3 shadow-xl" style="box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);">
+              <div class="flex items-center gap-2 mb-2">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                  <circle cx="10" cy="10" r="9" fill="#a855f7"/>
+                  <line x1="6" y1="10" x2="14" y2="10" stroke="white" stroke-width="2"/>
+                </svg>
+                <span class="text-purple-400 text-xs title-font font-bold">NETWORK</span>
+              </div>
+              <div class="text-purple-300 text-sm font-bold title-font">DOWN</div>
+            </div>
+          `;
+        }
+      },
+      {
+        name: 'database-crash',
+        minTaps: 5,
+        maxTaps: 5,
+        render: (tapsLeft) => {
+          return `
+            <div class="bug-shake bg-gradient-to-br from-orange-900 to-gray-900 border-2 border-orange-500 rounded-lg p-3 shadow-xl" style="box-shadow: 0 0 25px rgba(249, 115, 22, 0.5);">
+              <div class="flex items-center gap-2 mb-2">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                  <rect x="3" y="3" width="14" height="14" fill="#f97316" stroke="#ea580c" stroke-width="1"/>
+                  <text x="10" y="14" text-anchor="middle" fill="white" font-size="12" font-weight="bold">DB</text>
+                </svg>
+                <span class="text-orange-400 text-xs title-font font-bold">DATABASE</span>
+              </div>
+              <div class="text-orange-300 text-sm font-bold title-font">CRASH</div>
+            </div>
+          `;
+        }
+      }
+    ];
+    
+    // DOM Elements
+    const startScreen = document.getElementById('start-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const winScreen = document.getElementById('win-screen');
+    const loseScreen = document.getElementById('lose-screen');
+    const startBtn = document.getElementById('start-btn');
+    const playAgainWin = document.getElementById('play-again-win');
+    const playAgainLose = document.getElementById('play-again-lose');
+    const scoreDisplay = document.getElementById('score');
+    const timerDisplay = document.getElementById('timer');
+    const bugContainer = document.getElementById('bug-container');
+    const vehiclesContainer = document.getElementById('vehicles-container');
+    const effectsContainer = document.getElementById('effects-container');
+    const finalScoreDisplay = document.getElementById('final-score');
+    const loseScoreDisplay = document.getElementById('lose-score');
+    const titleDisplay = document.getElementById('title-display');
+    const instructionsDisplay = document.getElementById('instructions-display');
+    const winMessageDisplay = document.getElementById('win-message-display');
+    const prizeCodeDisplay = document.getElementById('prize-code-display');
+    
+    // Show screen helper
+    function showScreen(screen) {
+      [startScreen, gameScreen, winScreen, loseScreen].forEach(s => s.classList.add('hidden'));
+      screen.classList.remove('hidden');
+    }
+    
+    // Vehicle SVG templates
+    const vehicleTemplates = [
+      // Sedan
+      () => `
+        <svg width="40" height="70" viewBox="0 0 40 70" class="drop-shadow-lg">
+          <rect x="8" y="15" width="24" height="40" rx="3" fill="#3b82f6" stroke="#1e40af" stroke-width="1.5"/>
+          <rect x="10" y="20" width="20" height="10" rx="2" fill="#60a5fa" opacity="0.6"/>
+          <rect x="10" y="40" width="20" height="10" rx="2" fill="#60a5fa" opacity="0.6"/>
+          <circle cx="12" cy="10" r="4" fill="#1f2937"/>
+          <circle cx="28" cy="10" r="4" fill="#1f2937"/>
+          <circle cx="12" cy="60" r="4" fill="#1f2937"/>
+          <circle cx="28" cy="60" r="4" fill="#1f2937"/>
+        </svg>
+      `,
+      // SUV
+      () => `
+        <svg width="45" height="75" viewBox="0 0 45 75" class="drop-shadow-lg">
+          <rect x="6" y="12" width="33" height="48" rx="4" fill="#ef4444" stroke="#991b1b" stroke-width="1.5"/>
+          <rect x="9" y="18" width="27" height="12" rx="2" fill="#f87171" opacity="0.6"/>
+          <rect x="9" y="40" width="27" height="12" rx="2" fill="#f87171" opacity="0.6"/>
+          <circle cx="12" cy="8" r="5" fill="#1f2937"/>
+          <circle cx="33" cy="8" r="5" fill="#1f2937"/>
+          <circle cx="12" cy="67" r="5" fill="#1f2937"/>
+          <circle cx="33" cy="67" r="5" fill="#1f2937"/>
+        </svg>
+      `,
+      // Truck
+      () => `
+        <svg width="50" height="85" viewBox="0 0 50 85" class="drop-shadow-lg">
+          <rect x="10" y="8" width="30" height="20" rx="3" fill="#22c55e" stroke="#15803d" stroke-width="1.5"/>
+          <rect x="5" y="30" width="40" height="45" rx="4" fill="#4ade80" stroke="#15803d" stroke-width="1.5"/>
+          <circle cx="12" cy="78" r="5" fill="#1f2937"/>
+          <circle cx="38" cy="78" r="5" fill="#1f2937"/>
+          <rect x="12" y="14" width="26" height="8" rx="1" fill="#86efac" opacity="0.6"/>
+        </svg>
+      `,
+      // Van
+      () => `
+        <svg width="42" height="72" viewBox="0 0 42 72" class="drop-shadow-lg">
+          <rect x="7" y="8" width="28" height="55" rx="4" fill="#f59e0b" stroke="#b45309" stroke-width="1.5"/>
+          <rect x="10" y="13" width="22" height="15" rx="2" fill="#fbbf24" opacity="0.6"/>
+          <rect x="10" y="35" width="22" height="15" rx="2" fill="#fbbf24" opacity="0.6"/>
+          <circle cx="13" cy="66" r="4" fill="#1f2937"/>
+          <circle cx="29" cy="66" r="4" fill="#1f2937"/>
+        </svg>
+      `
+    ];
+    
+    // Road paths for vehicle spawning
+    const roadPaths = [
+      { 
+        getPosition: (progress) => {
+          const t = progress;
+          const x = 15 + (t > 0.3 && t < 0.5 ? 3 : 0) - (t > 0.5 && t < 0.7 ? 3 : 0);
+          const y = t * 110 - 5;
+          return { x: `${x}%`, y: `${y}%` };
+        },
+        direction: 'down'
+      },
+      { 
+        getPosition: (progress) => {
+          const t = progress;
+          const x = 45 + (t * 10) + Math.sin(t * Math.PI * 2) * 3;
+          const y = t * 110 - 5;
+          return { x: `${x}%`, y: `${y}%` };
+        },
+        direction: 'down'
+      },
+      { 
+        getPosition: (progress) => {
+          const t = progress;
+          const x = 80 - Math.sin(t * Math.PI) * 2;
+          const y = t * 110 - 5;
+          return { x: `${x}%`, y: `${y}%` };
+        },
+        direction: 'down'
+      },
+      { 
+        getPosition: (progress) => {
+          const t = progress;
+          const x = -5 + t * 110;
+          const y = 20 + t * 45;
+          return { x: `${x}%`, y: `${y}%` };
+        },
+        direction: 'right'
+      },
+      { 
+        getPosition: (progress) => {
+          const t = progress;
+          const x = -5 + t * 110;
+          const y = 70 + t * 15;
+          return { x: `${x}%`, y: `${y}%` };
+        },
+        direction: 'right'
+      }
+    ];
+    
+    // Spawn Vehicle
+    function spawnVehicle() {
+      if (!gameState.isPlaying) return;
+      
+      const vehicleId = ++gameState.vehicleIdCounter;
+      const vehicleEl = document.createElement('div');
+      vehicleEl.className = 'vehicle absolute';
+      vehicleEl.dataset.vehicleId = vehicleId;
+      
+      const vehicleTemplate = vehicleTemplates[Math.floor(Math.random() * vehicleTemplates.length)];
+      const roadPath = roadPaths[Math.floor(Math.random() * roadPaths.length)];
+      
+      vehicleEl.innerHTML = vehicleTemplate();
+      vehicleEl.style.pointerEvents = 'all';
+      
+      const goingForward = Math.random() > 0.5;
+      const duration = 4 + Math.random() * 3;
+      const startProgress = goingForward ? 0 : 1;
+      const endProgress = goingForward ? 1 : 0;
+      
+      const startPos = roadPath.getPosition(startProgress);
+      vehicleEl.style.left = startPos.x;
+      vehicleEl.style.top = startPos.y;
+      
+      const rotation = roadPath.direction === 'right' ? 90 : 0;
+      const baseTransform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+      
+      vehicleEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        hitVehicle(vehicleEl, vehicleId);
+      });
+      
+      vehicleEl.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        hitVehicle(vehicleEl, vehicleId);
+      }, { passive: false });
+      
+      vehiclesContainer.appendChild(vehicleEl);
+      gameState.vehicles.push(vehicleId);
+      
+      const startTime = Date.now();
+      const animate = () => {
+        if (!gameState.isPlaying || !vehiclesContainer.contains(vehicleEl)) return;
+        
+        const elapsed = (Date.now() - startTime) / 1000;
+        const progress = Math.min(elapsed / duration, 1);
+        const currentProgress = startProgress + (endProgress - startProgress) * progress;
+        
+        const pos = roadPath.getPosition(currentProgress);
+        vehicleEl.style.left = pos.x;
+        vehicleEl.style.top = pos.y;
+        vehicleEl.style.transform = baseTransform;
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          vehicleEl.remove();
+          gameState.vehicles = gameState.vehicles.filter(id => id !== vehicleId);
+        }
+      };
+      
+      requestAnimationFrame(animate);
+    }
+    
+    // Hit Vehicle (penalty)
+    function hitVehicle(vehicleEl, vehicleId) {
+      if (!gameState.isPlaying) return;
+      if (!gameState.vehicles.includes(vehicleId)) return;
+      
+      gameState.vehicles = gameState.vehicles.filter(id => id !== vehicleId);
+      
+      const rect = vehicleEl.getBoundingClientRect();
+      const containerRect = effectsContainer.getBoundingClientRect();
+      const x = rect.left - containerRect.left + rect.width / 2;
+      const y = rect.top - containerRect.top + rect.height / 2;
+      
+      vehicleEl.remove();
+      
+      gameState.score = Math.max(0, gameState.score - 1);
+      scoreDisplay.textContent = gameState.score;
+      scoreDisplay.classList.add('penalty-flash', 'text-red-400');
+      setTimeout(() => {
+        scoreDisplay.classList.remove('penalty-flash', 'text-red-400');
+      }, 300);
+      
+      showPenaltyEffect(x, y);
+    }
+    
+    // Show Penalty Effect
+    function showPenaltyEffect(x, y) {
+      const penalty = document.createElement('div');
+      penalty.className = 'penalty-text absolute title-font text-lg font-bold text-red-400';
+      penalty.style.left = `${x}px`;
+      penalty.style.top = `${y}px`;
+      penalty.style.transform = 'translate(-50%, -50%)';
+      penalty.style.textShadow = '0 0 10px #ef4444';
+      penalty.textContent = '-1 POINT!';
+      effectsContainer.appendChild(penalty);
+      
+      setTimeout(() => penalty.remove(), 500);
+    }
+    
+    // Start Game
+    function startGame() {
+      gameState = {
+        score: 0,
+        timeLeft: 45,
+        isPlaying: true,
+        bugs: [],
+        vehicles: [],
+        spawnInterval: null,
+        vehicleInterval: null,
+        timerInterval: null,
+        roadCurveInterval: null,
+        bugIdCounter: 0,
+        vehicleIdCounter: 0,
+        winThreshold: 40,
+        hasReached30: false,
+        prizeCode: ''
+      };
+      
+      scoreDisplay.textContent = '0';
+      timerDisplay.textContent = '45';
+      bugContainer.innerHTML = '';
+      vehiclesContainer.innerHTML = '';
+      
+      showScreen(gameScreen);
+      
+      gameState.timerInterval = setInterval(() => {
+        gameState.timeLeft--;
+        timerDisplay.textContent = gameState.timeLeft;
+        
+        if (gameState.timeLeft <= 10) {
+          timerDisplay.classList.add('text-red-400');
+        }
+        
+        if (gameState.timeLeft <= 0) {
+          endGame(false);
+        }
+      }, 1000);
+      
+      spawnVehicle();
+      spawnVehicle();
+      gameState.vehicleInterval = setInterval(() => {
+        if (gameState.isPlaying) {
+          spawnVehicle();
+          if (Math.random() > 0.5) {
+            spawnVehicle();
+          }
+        }
+      }, 1200 + Math.random() * 800);
+      
+      spawnBug();
+      let spawnDelay = 1200;
+      
+      function scheduleNextSpawn() {
+        if (!gameState.isPlaying) return;
+        
+        const elapsed = 45 - gameState.timeLeft;
+        if (elapsed > 10) spawnDelay = 1000;
+        if (elapsed > 20) spawnDelay = 800;
+        if (elapsed > 30) spawnDelay = 600;
+        
+        gameState.spawnInterval = setTimeout(() => {
+          if (gameState.isPlaying && gameState.bugs.length < 6) {
+            spawnBug();
+          }
+          scheduleNextSpawn();
+        }, spawnDelay + Math.random() * 400);
+      }
+      
+      scheduleNextSpawn();
+    }
+    
+    // Spawn Bug (on roads with multi-tap)
+    function spawnBug() {
+      const bugType = bugTypes[Math.floor(Math.random() * bugTypes.length)];
+      const bugId = ++gameState.bugIdCounter;
+      
+      const tapsNeeded = bugType.minTaps + Math.floor(Math.random() * (bugType.maxTaps - bugType.minTaps + 1));
+      
+      const bugEl = document.createElement('div');
+      bugEl.className = 'bug absolute transform -translate-x-1/2 -translate-y-1/2';
+      bugEl.dataset.bugId = bugId;
+      bugEl.dataset.tapsLeft = tapsNeeded;
+      
+      const roadPath = roadPaths[Math.floor(Math.random() * roadPaths.length)];
+      const progress = 0.15 + Math.random() * 0.7;
+      const pos = roadPath.getPosition(progress);
+      
+      const offsetRange = 5;
+      const offsetX = (Math.random() - 0.5) * offsetRange;
+      const offsetY = (Math.random() - 0.5) * offsetRange;
+      
+      bugEl.style.left = `calc(${pos.x} + ${offsetX}px)`;
+      bugEl.style.top = `calc(${pos.y} + ${offsetY}px)`;
+      bugEl.innerHTML = bugType.render(tapsNeeded);
+      
+      bugEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fixBug(bugEl, bugId, bugType);
+      });
+      
+      bugEl.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fixBug(bugEl, bugId, bugType);
+      }, { passive: false });
+      
+      bugContainer.appendChild(bugEl);
+      gameState.bugs.push(bugId);
+      
+      // Some bugs disappear if not fixed in time
+      const disappearChance = Math.random();
+      if (disappearChance < 0.4) { // 40% of bugs will disappear
+        const disappearTime = 3000 + Math.random() * 2500;
+        setTimeout(() => {
+          if (gameState.isPlaying && bugContainer.contains(bugEl)) {
+            bugEl.style.transition = 'opacity 0.3s ease-out';
+            bugEl.style.opacity = '0';
+            setTimeout(() => {
+              bugEl.remove();
+              gameState.bugs = gameState.bugs.filter(id => id !== bugId);
+            }, 300);
+          }
+        }, disappearTime);
+      }
+    }
+    
+    // Fix Bug (with multi-tap support)
+    function fixBug(bugEl, bugId, bugType) {
+      if (!gameState.isPlaying) return;
+      if (!gameState.bugs.includes(bugId)) return;
+      
+      let tapsLeft = parseInt(bugEl.dataset.tapsLeft);
+      tapsLeft--;
+      
+      const rect = bugEl.getBoundingClientRect();
+      const containerRect = effectsContainer.getBoundingClientRect();
+      const x = rect.left - containerRect.left + rect.width / 2;
+      const y = rect.top - containerRect.top + rect.height / 2;
+      
+      if (tapsLeft <= 0) {
+        // Bug fully fixed!
+        gameState.bugs = gameState.bugs.filter(id => id !== bugId);
+        bugEl.style.display = 'none';
+        bugEl.remove();
+        
+        gameState.score++;
+        scoreDisplay.textContent = gameState.score;
+        scoreDisplay.classList.add('score-bump');
+        setTimeout(() => scoreDisplay.classList.remove('score-bump'), 200);
+        
+        showFixedEffect(x, y);
+        
+        // Check for 40 points milestone
+        if (gameState.score >= 40 && !gameState.hasReached30) {
+          gameState.hasReached30 = true;
+          gameState.prizeCode = ['DEBUG-VR1', 'DEBUG-VR2', 'DEBUG-VR3'][Math.floor(Math.random() * 3)];
+          showMilestoneEffect();
+        }
+        
+        // Check for high score win at 50
+        if (gameState.score >= 50) {
+          endGame(true);
+        }
+      } else {
+        // Bug still needs more taps
+        bugEl.dataset.tapsLeft = tapsLeft;
+        bugEl.innerHTML = bugType.render(tapsLeft);
+        
+        // Re-attach handlers
+        const newBugEl = bugContainer.querySelector(`[data-bug-id="${bugId}"]`);
+        if (newBugEl) {
+          newBugEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fixBug(newBugEl, bugId, bugType);
+          });
+          newBugEl.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            fixBug(newBugEl, bugId, bugType);
+          }, { passive: false });
+        }
+        
+        showTapEffect(x, y);
+      }
+    }
+    
+    // Show Tap Effect
+    function showTapEffect(x, y) {
+      const tap = document.createElement('div');
+      tap.className = 'fixed-text absolute title-font text-sm font-bold text-yellow-400';
+      tap.style.left = `${x}px`;
+      tap.style.top = `${y}px`;
+      tap.style.transform = 'translate(-50%, -50%)';
+      tap.style.textShadow = '0 0 8px #fbbf24';
+      tap.textContent = 'TAP!';
+      effectsContainer.appendChild(tap);
+      
+      setTimeout(() => tap.remove(), 400);
+    }
+    
+    // Show Fixed Effect
+    function showFixedEffect(x, y) {
+      const spark = document.createElement('div');
+      spark.className = 'spark absolute w-16 h-16 rounded-full border-4 border-cyan-400';
+      spark.style.left = `${x}px`;
+      spark.style.top = `${y}px`;
+      spark.style.transform = 'translate(-50%, -50%)';
+      effectsContainer.appendChild(spark);
+      
+      const fixed = document.createElement('div');
+      fixed.className = 'fixed-text absolute title-font text-lg font-bold text-green-400';
+      fixed.style.left = `${x}px`;
+      fixed.style.top = `${y}px`;
+      fixed.style.transform = 'translate(-50%, -50%)';
+      fixed.style.textShadow = '0 0 10px #22c55e';
+      fixed.textContent = 'FIXED!';
+      effectsContainer.appendChild(fixed);
+      
+      setTimeout(() => {
+        spark.remove();
+        fixed.remove();
+      }, 500);
+    }
+    
+    // Show Milestone Effect (30 points reached)
+    function showMilestoneEffect() {
+      const milestone = document.createElement('div');
+      milestone.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center z-50';
+      milestone.innerHTML = `
+        <div class="bg-[#3EA527] border-4 border-white rounded-xl p-6 shadow-2xl" style="animation: fixedPop 1.5s ease-out;">
+          <div class="text-6xl mb-3">🏆</div>
+          <div class="title-font text-3xl font-black text-white neon-text mb-2">40 POINTS!</div>
+          <div class="text-white text-lg font-bold mb-2">Prize Unlocked!</div>
+          <div class="title-font text-2xl font-bold text-white tracking-wider">${gameState.prizeCode}</div>
+          <div class="text-white text-sm mt-3 opacity-90">Keep going for high score!</div>
+        </div>
+      `;
+      effectsContainer.appendChild(milestone);
+      
+      setTimeout(() => milestone.remove(), 3000);
+    }
+    
+    // End Game
+    function endGame(won) {
+      gameState.isPlaying = false;
+      clearInterval(gameState.timerInterval);
+      clearInterval(gameState.vehicleInterval);
+      clearTimeout(gameState.spawnInterval);
+      
+      timerDisplay.classList.remove('text-red-400');
+      
+      setTimeout(() => {
+        if (won && gameState.hasReached30) {
+          finalScoreDisplay.textContent = gameState.score;
+          prizeCodeDisplay.textContent = gameState.prizeCode;
+          showScreen(winScreen);
+        } else if (gameState.hasReached30 && !won) {
+          finalScoreDisplay.textContent = gameState.score;
+          prizeCodeDisplay.textContent = gameState.prizeCode;
+          showScreen(winScreen);
+        } else {
+          loseScoreDisplay.textContent = gameState.score;
+          showScreen(loseScreen);
+        }
+      }, 300);
+    }
+    
+    // Event Listeners
+    startBtn.addEventListener('click', startGame);
+    playAgainWin.addEventListener('click', () => showScreen(startScreen));
+    playAgainLose.addEventListener('click', startGame);
+    
+    // Element SDK Integration
+    async function onConfigChange(config) {
+      const title = config.game_title || defaultConfig.game_title;
+      const instructions = config.instructions_text || defaultConfig.instructions_text;
+      const winMsg = config.win_message || defaultConfig.win_message;
+      const prizeCode = config.prize_code || defaultConfig.prize_code;
+      const primaryColor = config.primary_color || defaultConfig.primary_color;
+      const accentColor = config.accent_color || defaultConfig.accent_color;
+      const fontFamily = config.font_family || defaultConfig.font_family;
+      const fontSize = config.font_size || defaultConfig.font_size;
+      
+      titleDisplay.textContent = title;
+      if (instructionsDisplay) {
+        instructionsDisplay.innerHTML = `<strong class="text-cyan-300">TAP BUGS</strong> to fix them — ${instructions}`;
+      }
+      winMessageDisplay.textContent = winMsg;
+      prizeCodeDisplay.textContent = prizeCode;
+      
+      titleDisplay.style.color = primaryColor;
+      winMessageDisplay.style.color = 'white';
+      winMessageDisplay.style.textShadow = '0 0 20px #22c55e, 0 0 40px #22c55e, 0 0 60px #22c55e';
+      prizeCodeDisplay.style.color = accentColor;
+      
+      const titleFontStack = `${fontFamily}, Orbitron, sans-serif`;
+      document.querySelectorAll('.title-font').forEach(el => {
+        el.style.fontFamily = titleFontStack;
+      });
+      
+      document.body.style.fontSize = `${fontSize}px`;
+    }
+    
+    function mapToCapabilities(config) {
+      return {
+        recolorables: [
+          {
+            get: () => config.background_color || defaultConfig.background_color,
+            set: (value) => {
+              config.background_color = value;
+              if (window.elementSdk) window.elementSdk.setConfig({ background_color: value });
+            }
+          },
+          {
+            get: () => config.road_color || defaultConfig.road_color,
+            set: (value) => {
+              config.road_color = value;
+              if (window.elementSdk) window.elementSdk.setConfig({ road_color: value });
+            }
+          },
+          {
+            get: () => config.primary_color || defaultConfig.primary_color,
+            set: (value) => {
+              config.primary_color = value;
+              if (window.elementSdk) window.elementSdk.setConfig({ primary_color: value });
+            }
+          },
+          {
+            get: () => config.text_color || defaultConfig.text_color,
+            set: (value) => {
+              config.text_color = value;
+              if (window.elementSdk) window.elementSdk.setConfig({ text_color: value });
+            }
+          },
+          {
+            get: () => config.accent_color || defaultConfig.accent_color,
+            set: (value) => {
+              config.accent_color = value;
+              if (window.elementSdk) window.elementSdk.setConfig({ accent_color: value });
+            }
+          }
+        ],
+        borderables: [],
+        fontEditable: {
+          get: () => config.font_family || defaultConfig.font_family,
+          set: (value) => {
+            config.font_family = value;
+            if (window.elementSdk) window.elementSdk.setConfig({ font_family: value });
+          }
+        },
+        fontSizeable: {
+          get: () => config.font_size || defaultConfig.font_size,
+          set: (value) => {
+            config.font_size = value;
+            if (window.elementSdk) window.elementSdk.setConfig({ font_size: value });
+          }
+        }
+      };
+    }
+    
+    function mapToEditPanelValues(config) {
+      return new Map([
+        ['game_title', config.game_title || defaultConfig.game_title],
+        ['instructions_text', config.instructions_text || defaultConfig.instructions_text],
+        ['win_message', config.win_message || defaultConfig.win_message],
+        ['prize_code', config.prize_code || defaultConfig.prize_code]
+      ]);
+    }
+    
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities,
+        mapToEditPanelValues
+      });
+    }
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c0af11d83d12b36',t:'MTc2ODg3NDA0NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
