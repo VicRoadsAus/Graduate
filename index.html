@@ -22,36 +22,23 @@
       font-family: 'Orbitron', sans-serif;
     }
     
-    /* 16:9 aspect ratio container for desktop, full viewport for mobile */
-    @media (min-width: 768px) {
-      #app {
-        aspect-ratio: 16 / 9;
-        max-width: 100vw;
-        max-height: 100vh;
-        margin: 0 auto;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-      }
-      
-      /* Calculate based on which dimension is limiting */
-      @supports (aspect-ratio: 16 / 9) {
-        #app {
-          width: min(100vw, calc(100vh * 16 / 9));
-          height: min(100vh, calc(100vw * 9 / 16));
-        }
-      }
+    /* Adaptive layout - always centered, no scrolling needed */
+    #app {
+      width: 100%;
+      height: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     
-    @media (max-width: 767px) {
-      #app {
-        width: 100vw;
-        height: 100vh;
-        position: fixed;
-        top: 0;
-        left: 0;
-      }
+    #app > div {
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
     }
     
     @keyframes flicker {
@@ -306,40 +293,53 @@
       </g>
      </svg>
     </div>
-    <div class="relative z-10 text-center px-6 max-w-2xl">
-     <div class="text-5xl md:text-6xl mb-3">
+    <div class="relative z-10 text-center px-4 md:px-6 max-w-2xl w-full overflow-y-auto" style="max-height: 95vh;">
+     <div class="text-4xl md:text-6xl mb-2 md:mb-3">
       🐛🚗
      </div>
-     <h1 id="title-display" class="title-font text-3xl md:text-5xl font-black text-[#3EA527] neon-text mb-4 md:mb-6">DEBUG THE ROAD!</h1><!-- Instructions -->
-     <div class="bg-gray-800/80 border-2 border-[#3EA527] rounded-xl p-4 md:p-6 mb-6 text-left">
-      <h2 class="title-font text-lg md:text-xl text-[#3EA527] mb-3 flex items-center gap-2"><strong>HOW TO PLAY</strong></h2>
-      <div class="space-y-3 text-gray-200 text-xs md:text-sm">
+     <h1 id="title-display" class="title-font text-2xl md:text-5xl font-black text-[#3EA527] neon-text mb-3 md:mb-6">DEBUG THE ROAD!</h1><!-- Instructions -->
+     <div class="bg-gray-800/80 border-2 border-[#3EA527] rounded-xl p-3 md:p-6 mb-4 md:mb-6 text-left">
+      <h2 class="title-font text-base md:text-xl text-[#3EA527] mb-2 md:mb-3 flex items-center gap-2"><strong>HOW TO PLAY</strong></h2>
+      <div class="space-y-2 md:space-y-3 text-gray-200 text-xs md:text-sm">
        <div>
-        <p class="font-bold text-[#3EA527] mb-1">🐞 Debug the Bugs!</p>
-        <p class="leading-relaxed">Bugs have invaded the digital road network! Tap every glitch you see. Some bugs need multiple taps to fully disappear. <strong class="text-[#3EA527]">Keep tapping until gone!</strong></p>
+        <p class="font-bold text-[#3EA527] mb-0.5">🐞 Debug the Road!</p>
+        <p class="leading-snug md:leading-relaxed">Bugs have invaded the digital road network! Tap every glitch you see. Some bugs need multiple taps to fully resolve. <strong class="text-[#3EA527]">Keep tapping!</strong></p>
        </div>
        <div>
-        <p class="font-bold text-[#3EA527] mb-1">🚗 Avoid the Vehicles</p>
-        <p class="leading-relaxed">Don't tap vehicles — each hit costs you <strong class="text-red-400">–1 point</strong>.</p>
+        <p class="font-bold text-[#3EA527] mb-0.5">🚗 Avoid Vehicles</p>
+        <p class="leading-snug md:leading-relaxed">Each vehicle hit costs <strong class="text-red-400">–1 point</strong>.</p>
        </div>
        <div>
-        <p class="font-bold text-[#3EA527] mb-1">⏱️ 45 Seconds on the Clock</p>
-        <p class="leading-relaxed">Clear as many bugs as possible before time runs out.</p>
+        <p class="font-bold text-[#3EA527] mb-0.5">⏱️ 45 Seconds</p>
+        <p class="leading-snug md:leading-relaxed">Clear as many bugs as possible.</p>
        </div>
        <div>
-        <p class="font-bold text-[#3EA527] mb-1">🏆 Reach 40 Points to Win!</p>
-        <p class="leading-relaxed">Hit 40 points to unlock a prize code for the VicRoads booth!</p>
+        <p class="font-bold text-[#3EA527] mb-0.5">🏆 Reach 40 Points!</p>
+        <p class="leading-snug md:leading-relaxed">Unlock a prize code for VicRoads booth!</p>
        </div>
       </div>
-     </div><button id="start-btn" class="title-font bg-[#3EA527] hover:bg-[#4bb82f] text-white font-bold py-3 md:py-4 px-8 md:px-12 text-lg md:text-xl rounded-lg transform hover:scale-105 transition-all duration-200 shadow-lg shadow-[#3EA527]/50"> START DEBUGGING </button>
-     <p class="text-[#3EA527] text-xs mt-3 md:mt-4 opacity-80">Tap carefully — vehicles move fast!</p>
+     </div><button id="start-btn" class="title-font bg-[#3EA527] hover:bg-[#4bb82f] text-white font-bold py-2.5 md:py-4 px-6 md:px-12 text-base md:text-xl rounded-lg transform hover:scale-105 transition-all duration-200 shadow-lg shadow-[#3EA527]/50"> START DEBUGGING </button>
+     <p class="text-[#3EA527] text-xs mt-2 md:mt-4 opacity-80 mb-4">Tap carefully — vehicles move fast!</p>
+     <p class="text-gray-400 text-xs mt-6 opacity-80">© VicRoads 2026</p>
     </div>
    </div><!-- Game Screen -->
    <div id="game-screen" class="h-full w-full hidden game-bg relative overflow-hidden"><!-- HUD -->
-    <div class="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-30 bg-gradient-to-b from-gray-900/90 to-transparent">
-     <div class="flex items-center gap-2"><span class="text-[#3EA527] text-sm title-font">SCORE:</span> <span id="score" class="text-3xl font-bold text-[#3EA527] neon-text title-font">0</span> <span class="text-[#046A38] text-xl title-font">/40</span>
+    <div class="absolute top-0 left-0 right-0 p-3 md:p-4 flex justify-between items-center z-30 bg-gradient-to-b from-gray-900/95 to-transparent">
+     <div class="bg-gray-800/90 border-2 border-[#3EA527] rounded-lg px-3 md:px-4 py-2 flex items-center gap-2 shadow-lg"><span class="text-[#3EA527] text-xs md:text-sm title-font font-bold">BUGS FIXED:</span> <span id="score" class="text-2xl md:text-4xl font-black text-[#3EA527] neon-text title-font">0</span> <span class="text-[#046A38] text-base md:text-xl title-font font-bold">/40</span>
      </div>
-     <div class="flex items-center gap-2"><span class="text-2xl">⏱️</span> <span id="timer" class="text-3xl font-bold text-[#3EA527] neon-text title-font">45</span>
+     <div class="bg-gray-800/90 border-2 border-[#3EA527] rounded-lg px-3 md:px-4 py-2 flex items-center gap-2 shadow-lg"><span class="text-xl md:text-2xl">⏱️</span> <span id="timer" class="text-2xl md:text-4xl font-black text-[#3EA527] neon-text title-font">45</span> <span class="text-[#046A38] text-xs md:text-sm title-font font-bold">SEC</span>
+     </div>
+    </div><!-- System Override Banner (shown after 40 points) -->
+    <div id="override-banner" class="absolute top-16 md:top-20 left-1/2 transform -translate-x-1/2 z-30 hidden">
+     <div class="bg-gradient-to-r from-yellow-500 to-orange-500 border-2 border-yellow-300 rounded-lg px-4 md:px-6 py-2 md:py-3 shadow-xl" style="box-shadow: 0 0 30px rgba(251, 191, 36, 0.6);">
+      <div class="text-center">
+       <div class="title-font text-lg md:text-2xl font-black text-white neon-text mb-1">
+        ��� SYSTEM OVERRIDE ⚡
+       </div>
+       <div class="text-white text-xs md:text-sm font-bold">
+        40 POINTS REACHED! Keep going for bonus code!
+       </div>
+      </div>
      </div>
     </div><!-- Highway System Container -->
     <div class="road-container"><!-- Multiple Highway Roads -->
@@ -499,9 +499,10 @@
      <p class="text-gray-300 text-lg mb-8">Final Score: <span id="final-score" class="font-bold text-2xl text-[#3EA527]">0</span></p>
      <div class="bg-gray-800/80 border-2 border-[#3EA527] rounded-xl p-6 mb-8 max-w-sm mx-auto">
       <p class="text-[#3EA527] text-sm mb-2 title-font">🎁 YOUR PRIZE CODE</p>
-      <p id="prize-code-display" class="title-font text-2xl md:text-3xl font-bold text-[#3EA527] neon-text tracking-wider">DEBUG-VR1</p>
+      <p id="prize-code-display" class="title-font text-2xl md:text-3xl font-bold text-[#22c55e] tracking-wider" style="text-shadow: 0 0 15px #22c55e, 0 0 30px #22c55e;">DEBUG-VR1</p>
       <p class="text-gray-300 text-xs mt-3 opacity-70">Show this screen at the VicRoads booth!</p>
      </div><button id="play-again-win" class="title-font bg-[#3EA527] hover:bg-[#4bb82f] text-white font-bold py-3 px-8 text-lg rounded-lg transform hover:scale-105 transition-all duration-200"> PLAY AGAIN </button>
+     <p class="text-gray-400 text-xs mt-6 opacity-80">© VicRoads 2026</p>
     </div>
    </div><!-- Lose Screen -->
    <div id="lose-screen" class="h-full w-full hidden flex flex-col items-center justify-center game-bg relative overflow-hidden">
@@ -514,6 +515,7 @@
      <p class="text-gray-200 text-xl mb-2">Too many bugs remain...</p>
      <p class="text-gray-300 text-lg mb-8">You fixed: <span id="lose-score" class="font-bold text-2xl text-yellow-400">0</span> / 40 bugs</p><button id="play-again-lose" class="title-font bg-[#3EA527] hover:bg-[#4bb82f] text-white font-bold py-4 px-12 text-xl rounded-lg transform hover:scale-105 transition-all duration-200 shadow-lg shadow-[#3EA527]/50"> TRY AGAIN </button>
      <p class="text-[#3EA527] text-sm mt-6 opacity-70">Tip: Some bugs need multiple taps to clear!</p>
+     <p class="text-gray-400 text-xs mt-4 opacity-80">© VicRoads 2026</p>
     </div>
    </div>
   </div>
@@ -724,6 +726,148 @@
             </div>
           `;
         }
+      },
+      {
+        name: 'mother-bug-red',
+        minTaps: 6,
+        maxTaps: 8,
+        render: (tapsLeft) => {
+          return `
+            <div class="bug-glitch flex flex-col items-center" style="filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.6));">
+              <svg width="70" height="70" viewBox="0 0 70 70" class="drop-shadow-xl">
+                <!-- Beetle Body -->
+                <ellipse cx="35" cy="38" rx="18" ry="24" fill="#dc2626" stroke="#991b1b" stroke-width="2"/>
+                
+                <!-- Beetle Head -->
+                <ellipse cx="35" cy="18" rx="12" ry="10" fill="#b91c1c" stroke="#7f1d1d" stroke-width="2"/>
+                
+                <!-- Wing Split Line -->
+                <line x1="35" y1="20" x2="35" y2="56" stroke="#7f1d1d" stroke-width="2"/>
+                
+                <!-- Beetle Spots -->
+                <circle cx="28" cy="30" r="3" fill="#7f1d1d" opacity="0.8"/>
+                <circle cx="42" cy="30" r="3" fill="#7f1d1d" opacity="0.8"/>
+                <circle cx="28" cy="42" r="3" fill="#7f1d1d" opacity="0.8"/>
+                <circle cx="42" cy="42" r="3" fill="#7f1d1d" opacity="0.8"/>
+                <circle cx="28" cy="52" r="2.5" fill="#7f1d1d" opacity="0.8"/>
+                <circle cx="42" cy="52" r="2.5" fill="#7f1d1d" opacity="0.8"/>
+                
+                <!-- Antennae -->
+                <line x1="30" y1="14" x2="24" y2="8" stroke="#7f1d1d" stroke-width="2" stroke-linecap="round"/>
+                <line x1="40" y1="14" x2="46" y2="8" stroke="#7f1d1d" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="24" cy="8" r="2" fill="#ef4444"/>
+                <circle cx="46" cy="8" r="2" fill="#ef4444"/>
+                
+                <!-- Legs -->
+                <line x1="19" y1="28" x2="12" y2="24" stroke="#7f1d1d" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="51" y1="28" x2="58" y2="24" stroke="#7f1d1d" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="17" y1="38" x2="8" y2="38" stroke="#7f1d1d" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="53" y1="38" x2="62" y2="38" stroke="#7f1d1d" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="19" y1="50" x2="12" y2="56" stroke="#7f1d1d" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="51" y1="50" x2="58" y2="56" stroke="#7f1d1d" stroke-width="2.5" stroke-linecap="round"/>
+                
+                <!-- Glitch Effect -->
+                <text x="35" y="42" text-anchor="middle" fill="#fbbf24" font-size="16" font-weight="bold" class="bug-flicker">⚠</text>
+              </svg>
+              <span class="text-xs text-red-500 mt-1 font-bold title-font">TrafficJam</span>
+            </div>
+          `;
+        }
+      },
+      {
+        name: 'mother-bug-purple',
+        minTaps: 7,
+        maxTaps: 9,
+        render: (tapsLeft) => {
+          return `
+            <div class="bug-pulse flex flex-col items-center" style="filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.6));">
+              <svg width="75" height="75" viewBox="0 0 75 75" class="drop-shadow-xl">
+                <!-- Beetle Body -->
+                <ellipse cx="37.5" cy="40" rx="20" ry="26" fill="#7c3aed" stroke="#5b21b6" stroke-width="2"/>
+                
+                <!-- Beetle Head -->
+                <ellipse cx="37.5" cy="18" rx="13" ry="11" fill="#6d28d9" stroke="#4c1d95" stroke-width="2"/>
+                
+                <!-- Wing Split Line -->
+                <line x1="37.5" y1="20" x2="37.5" y2="60" stroke="#4c1d95" stroke-width="2"/>
+                
+                <!-- Beetle Spots -->
+                <circle cx="29" cy="32" r="3.5" fill="#4c1d95" opacity="0.8"/>
+                <circle cx="46" cy="32" r="3.5" fill="#4c1d95" opacity="0.8"/>
+                <circle cx="29" cy="45" r="3.5" fill="#4c1d95" opacity="0.8"/>
+                <circle cx="46" cy="45" r="3.5" fill="#4c1d95" opacity="0.8"/>
+                <circle cx="29" cy="56" r="3" fill="#4c1d95" opacity="0.8"/>
+                <circle cx="46" cy="56" r="3" fill="#4c1d95" opacity="0.8"/>
+                
+                <!-- Antennae -->
+                <line x1="31" y1="14" x2="24" y2="7" stroke="#4c1d95" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="44" y1="14" x2="51" y2="7" stroke="#4c1d95" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="24" cy="7" r="2.5" fill="#a855f7"/>
+                <circle cx="51" cy="7" r="2.5" fill="#a855f7"/>
+                
+                <!-- Legs -->
+                <line x1="19" y1="30" x2="11" y2="25" stroke="#4c1d95" stroke-width="3" stroke-linecap="round"/>
+                <line x1="56" y1="30" x2="64" y2="25" stroke="#4c1d95" stroke-width="3" stroke-linecap="round"/>
+                <line x1="17" y1="40" x2="7" y2="40" stroke="#4c1d95" stroke-width="3" stroke-linecap="round"/>
+                <line x1="58" y1="40" x2="68" y2="40" stroke="#4c1d95" stroke-width="3" stroke-linecap="round"/>
+                <line x1="19" y1="52" x2="11" y2="60" stroke="#4c1d95" stroke-width="3" stroke-linecap="round"/>
+                <line x1="56" y1="52" x2="64" y2="60" stroke="#4c1d95" stroke-width="3" stroke-linecap="round"/>
+                
+                <!-- Glitch Effect -->
+                <text x="37.5" y="44" text-anchor="middle" fill="#fbbf24" font-size="18" font-weight="bold" class="bug-shake">X</text>
+              </svg>
+              <span class="text-xs text-purple-500 mt-1 font-bold title-font">Malware</span>
+            </div>
+          `;
+        }
+      },
+      {
+        name: 'mother-bug-green',
+        minTaps: 8,
+        maxTaps: 10,
+        render: (tapsLeft) => {
+          return `
+            <div class="bug-glitch flex flex-col items-center" style="filter: drop-shadow(0 0 15px rgba(34, 197, 94, 0.6));">
+              <svg width="80" height="80" viewBox="0 0 80 80" class="drop-shadow-xl">
+                <!-- Beetle Body -->
+                <ellipse cx="40" cy="42" rx="22" ry="28" fill="#16a34a" stroke="#15803d" stroke-width="2.5"/>
+                
+                <!-- Beetle Head -->
+                <ellipse cx="40" cy="18" rx="14" ry="12" fill="#15803d" stroke="#14532d" stroke-width="2.5"/>
+                
+                <!-- Wing Split Line -->
+                <line x1="40" y1="22" x2="40" y2="64" stroke="#14532d" stroke-width="2.5"/>
+                
+                <!-- Beetle Spots -->
+                <circle cx="31" cy="34" r="4" fill="#14532d" opacity="0.8"/>
+                <circle cx="49" cy="34" r="4" fill="#14532d" opacity="0.8"/>
+                <circle cx="31" cy="47" r="4" fill="#14532d" opacity="0.8"/>
+                <circle cx="49" cy="47" r="4" fill="#14532d" opacity="0.8"/>
+                <circle cx="31" cy="58" r="3.5" fill="#14532d" opacity="0.8"/>
+                <circle cx="49" cy="58" r="3.5" fill="#14532d" opacity="0.8"/>
+                <circle cx="40" cy="52" r="3" fill="#14532d" opacity="0.8"/>
+                
+                <!-- Antennae -->
+                <line x1="33" y1="13" x2="25" y2="5" stroke="#14532d" stroke-width="3" stroke-linecap="round"/>
+                <line x1="47" y1="13" x2="55" y2="5" stroke="#14532d" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="25" cy="5" r="3" fill="#22c55e"/>
+                <circle cx="55" cy="5" r="3" fill="#22c55e"/>
+                
+                <!-- Legs -->
+                <line x1="20" y1="32" x2="10" y2="27" stroke="#14532d" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="60" y1="32" x2="70" y2="27" stroke="#14532d" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="18" y1="42" x2="6" y2="42" stroke="#14532d" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="62" y1="42" x2="74" y2="42" stroke="#14532d" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="20" y1="54" x2="10" y2="62" stroke="#14532d" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="60" y1="54" x2="70" y2="62" stroke="#14532d" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Glitch Effect -->
+                <text x="40" y="46" text-anchor="middle" fill="#fbbf24" font-size="20" font-weight="bold" class="bug-pulse">!</text>
+              </svg>
+              <span class="text-xs text-green-500 mt-1 font-bold title-font">StackOverflowError</span>
+            </div>
+          `;
+        }
       }
     ];
     
@@ -746,6 +890,7 @@
     const instructionsDisplay = document.getElementById('instructions-display');
     const winMessageDisplay = document.getElementById('win-message-display');
     const prizeCodeDisplay = document.getElementById('prize-code-display');
+    const overrideBanner = document.getElementById('override-banner');
     
     // Show screen helper
     function showScreen(screen) {
@@ -977,6 +1122,11 @@
       bugContainer.innerHTML = '';
       vehiclesContainer.innerHTML = '';
       
+      // Hide override banner
+      if (overrideBanner) {
+        overrideBanner.classList.add('hidden');
+      }
+      
       showScreen(gameScreen);
       
       gameState.timerInterval = setInterval(() => {
@@ -1010,16 +1160,16 @@
         if (!gameState.isPlaying) return;
         
         const elapsed = 45 - gameState.timeLeft;
-        if (elapsed > 10) spawnDelay = 1000;
-        if (elapsed > 20) spawnDelay = 800;
-        if (elapsed > 30) spawnDelay = 600;
+        if (elapsed > 10) spawnDelay = 700;
+        if (elapsed > 20) spawnDelay = 500;
+        if (elapsed > 30) spawnDelay = 350;
         
         gameState.spawnInterval = setTimeout(() => {
-          if (gameState.isPlaying && gameState.bugs.length < 6) {
+          if (gameState.isPlaying && gameState.bugs.length < 20) {
             spawnBug();
           }
           scheduleNextSpawn();
-        }, spawnDelay + Math.random() * 400);
+        }, spawnDelay + Math.random() * 200);
       }
       
       scheduleNextSpawn();
@@ -1109,13 +1259,7 @@
         // Check for 40 points milestone
         if (gameState.score >= 40 && !gameState.hasReached30) {
           gameState.hasReached30 = true;
-          gameState.prizeCode = ['DEBUG-VR1', 'DEBUG-VR2', 'DEBUG-VR3'][Math.floor(Math.random() * 3)];
           showMilestoneEffect();
-        }
-        
-        // Check for high score win at 50
-        if (gameState.score >= 50) {
-          endGame(true);
         }
       } else {
         // Bug still needs more taps
@@ -1178,22 +1322,13 @@
       }, 500);
     }
     
-    // Show Milestone Effect (30 points reached)
+    // Show Milestone Effect (40 points reached)
     function showMilestoneEffect() {
-      const milestone = document.createElement('div');
-      milestone.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center z-50';
-      milestone.innerHTML = `
-        <div class="bg-[#3EA527] border-4 border-white rounded-xl p-6 shadow-2xl" style="animation: fixedPop 1.5s ease-out;">
-          <div class="text-6xl mb-3">🏆</div>
-          <div class="title-font text-3xl font-black text-white neon-text mb-2">40 POINTS!</div>
-          <div class="text-white text-lg font-bold mb-2">Prize Unlocked!</div>
-          <div class="title-font text-2xl font-bold text-white tracking-wider">${gameState.prizeCode}</div>
-          <div class="text-white text-sm mt-3 opacity-90">Keep going for high score!</div>
-        </div>
-      `;
-      effectsContainer.appendChild(milestone);
-      
-      setTimeout(() => milestone.remove(), 3000);
+      // Show SYSTEM OVERRIDE banner at top
+      if (overrideBanner) {
+        overrideBanner.classList.remove('hidden');
+        overrideBanner.style.animation = 'fixedPop 0.5s ease-out';
+      }
     }
     
     // End Game
@@ -1205,10 +1340,28 @@
       
       timerDisplay.classList.remove('text-red-400');
       
+      // Generate prize code based on final score
+      if (gameState.score >= 60) {
+        gameState.prizeCode = 'DEBUG-VR60';
+      } else if (gameState.score >= 40) {
+        gameState.prizeCode = 'DEBUG-VR40';
+      }
+      
       setTimeout(() => {
         if (won && gameState.hasReached30) {
           finalScoreDisplay.textContent = gameState.score;
           prizeCodeDisplay.textContent = gameState.prizeCode;
+          
+          // Update win message for 60+ score
+          if (gameState.score >= 60) {
+            winMessageDisplay.textContent = 'SYSTEM OVERRIDE COMPLETE!';
+            const winScreenContent = winScreen.querySelector('.relative.z-10');
+            const congratsMsg = winScreenContent.querySelector('.text-gray-200.text-xl');
+            if (congratsMsg) {
+              congratsMsg.textContent = '🎉 Congratulations! You passed the SYSTEM OVERRIDE challenge!';
+            }
+          }
+          
           showScreen(winScreen);
         } else if (gameState.hasReached30 && !won) {
           finalScoreDisplay.textContent = gameState.score;
@@ -1247,7 +1400,8 @@
       titleDisplay.style.color = primaryColor;
       winMessageDisplay.style.color = 'white';
       winMessageDisplay.style.textShadow = '0 0 20px #22c55e, 0 0 40px #22c55e, 0 0 60px #22c55e';
-      prizeCodeDisplay.style.color = accentColor;
+      prizeCodeDisplay.style.color = '#22c55e';
+      prizeCodeDisplay.style.textShadow = '0 0 15px #22c55e, 0 0 30px #22c55e';
       
       const titleFontStack = `${fontFamily}, Orbitron, sans-serif`;
       document.querySelectorAll('.title-font').forEach(el => {
@@ -1332,5 +1486,5 @@
       });
     }
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c0af11d83d12b36',t:'MTc2ODg3NDA0NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c0b507181982b36',t:'MTc2ODg3Nzk1MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
